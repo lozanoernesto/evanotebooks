@@ -498,7 +498,7 @@
     "id": "7SDx1hrO53",
     "type": "code",
     "data": {
-      "code": "import {\n  PoseLandmarker,\n  FilesetResolver,\n  DrawingUtils\n} from \"https://cdn.skypack.dev/@mediapipe/tasks-vision@0.10.0\";\n\nconst filesetResolver = await FilesetResolver.forVisionTasks(\n    \"https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.0/wasm\"\n);\n\n/* \n   TODO: I think this function introduce a high overhead, so it should be migrated to WASM C.\n*/\nfunction calculateCentroid(landmarks) {\n    const sum = landmarks.reduce((acc, landmark) => {\n        acc[0] = landmark.x + acc[0];\n        acc[1] = landmark.y + acc[1];\n        acc[2] = landmark.z + acc[2];\n        return acc;\n    }, [0, 0, 0]);\n    return sum.map(coord => coord / landmarks.length);\n}\n\nconst vision = await FilesetResolver.forVisionTasks(\n    \"https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.0/wasm\"\n  );\n\nconst poseLandmarker = await PoseLandmarker.createFromOptions(vision, {\n    baseOptions: {\n      modelAssetPath: `https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task`,\n      delegate: \"GPU\"\n    },\n    runningMode: \"IMAGE\",\n    numPoses: 2\n});\n\n\nconst visionLine = 0.5;\nconst threshold = 0.3;\n\n\nconst greetings = [\n  \"Hola, que puedo hacer por ti hoy?\",\n  \"Buenas tardes\",\n  \"Estimado, como puedo ayudarte?\",\n  \"Hola, por que me miras? Se que soy hermosa, pero no me mires asi\",\n  \"Hola, no me mires asi porque me desgasto\"\n]\n\n\nconnect(\"MQTT\", {\n  ...environment.mqtt,\n  topic: \"eva/camera/image\"\n}).pipe(\n  filter(x => x.message),\n  throttleTime(200),\n  base64ToBlob(),\n  blobToImage,\n  map(({message: img, connection}) => {\n    const faceLandmarks = poseLandmarker.detect(img).faceLandmarks;\n    if (faceLandmarks.length === 0) {\n      connection.send({topic: \"eva/neck/animation\", message:  \"c\"});\n      return {message: null, connection};\n    }\n    const [x,y,z] = calculateCentroid(faceLandmarks[0]);\n    const distance = visionLine-x;\n    const relativeDistance = Math.abs(distance)/x;\n    if (relativeDistance <= threshold)\n      return {message: null, connection};\n    connection.send({topic: \"eva/neck/animation\", message:  distance > 0 ? \"r\" : \"l\"});\n    return {message: math.distance([x,y,z], [0,0,0]), connection};\n  }),\n  filter(x => x.message && x.message <= 1.2),\n  throttleTime(7000),\n  tap(({connection}) => {\n    connection.send({topic: \"hermes/tts/say\", message: serialize({text: greetings[randint(0,greetings.length)]})})\n  })\n)",
+      "code": "import {\n  PoseLandmarker,\n  FilesetResolver,\n  DrawingUtils\n} from \"https://cdn.skypack.dev/@mediapipe/tasks-vision@0.10.0\";\n\nconst filesetResolver = await FilesetResolver.forVisionTasks(\n    \"https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.0/wasm\"\n);\n\n/* \n   TODO: I think this function introduce a high overhead, so it should be migrated to WASM C.\n*/\nfunction calculateCentroid(landmarks) {\n    const sum = landmarks.reduce((acc, landmark) => {\n        acc[0] = landmark.x + acc[0];\n        acc[1] = landmark.y + acc[1];\n        acc[2] = landmark.z + acc[2];\n        return acc;\n    }, [0, 0, 0]);\n    return sum.map(coord => coord / landmarks.length);\n}\n\nconst vision = await FilesetResolver.forVisionTasks(\n    \"https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.0/wasm\"\n  );\n\nconst poseLandmarker = await PoseLandmarker.createFromOptions(vision, {\n    baseOptions: {\n      modelAssetPath: `https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task`,\n      delegate: \"GPU\"\n    },\n    runningMode: \"IMAGE\",\n    numPoses: 2\n});\n\n\nconst visionLine = 0.5;\nconst threshold = 0.3;\n\n\nconst greetings = [\n  \"Hola, que puedo hacer por ti hoy?\",\n  \"Buenas tardes\",\n  \"Estimado, como puedo ayudarte?\",\n  \"Hola, por que me miras? Se que soy hermosa, pero no me mires asi\",\n  \"Hola, no me mires asi porque me desgasto\"\n]\n\n\nconnect(\"MQTT\", {\n  ...environment.mqtt,\n  topic: \"eva/camera/image\"\n}).pipe(\n  filter(x => x.message),\n  throttleTime(200),\n  base64ToBlob(),\n  blobToImage,\n  map(({message: img, connection}) => {\n    const landmarks = poseLandmarker.detect(img).landmarks;\n    if (landmarks.length === 0) {\n      connection.send({topic: \"eva/neck/animation\", message:  \"c\"});\n      return {message: null, connection};\n    }\n    const [x,y,z] = calculateCentroid(landmarks[0]);\n    const distance = visionLine-x;\n    const relativeDistance = Math.abs(distance)/x;\n    if (relativeDistance <= threshold)\n      return {message: null, connection};\n    connection.send({topic: \"eva/neck/animation\", message:  distance > 0 ? \"r\" : \"l\"});\n    return {message: math.distance([x,y,z], [0,0,0]), connection};\n  }),\n  filter(x => x.message && x.message <= 1.2),\n  throttleTime(7000),\n  tap(({connection}) => {\n    connection.send({topic: \"hermes/tts/say\", message: serialize({text: greetings[randint(0,greetings.length)]})})\n  })\n)",
       "language": "javascript",
       "output": ""
     },
@@ -812,16 +812,368 @@
             "creator": "fvaguydpuy",
             "time": 1684618537823.06
           }
+        ],
+        [
+          {
+            "body": [
+              {
+                "ifMatch": {
+                  "$set": {
+                    "data": {
+                      "code": "import {\n  PoseLandmarker,\n  FilesetResolver,\n  DrawingUtils\n} from \"https://cdn.skypack.dev/@mediapipe/tasks-vision@0.10.0\";\n\nconst filesetResolver = await FilesetResolver.forVisionTasks(\n    \"https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.0/wasm\"\n);\n\n/* \n   TODO: I think this function introduce a high overhead, so it should be migrated to WASM C.\n*/\nfunction calculateCentroid(landmarks) {\n    const sum = landmarks.reduce((acc, landmark) => {\n        acc[0] = landmark.x + acc[0];\n        acc[1] = landmark.y + acc[1];\n        acc[2] = landmark.z + acc[2];\n        return acc;\n    }, [0, 0, 0]);\n    return sum.map(coord => coord / landmarks.length);\n}\n\nconst vision = await FilesetResolver.forVisionTasks(\n    \"https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.0/wasm\"\n  );\n\nconst poseLandmarker = await PoseLandmarker.createFromOptions(vision, {\n    baseOptions: {\n      modelAssetPath: `https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task`,\n      delegate: \"GPU\"\n    },\n    runningMode: \"IMAGE\",\n    numPoses: 2\n});\n\n\nconst visionLine = 0.5;\nconst threshold = 0.3;\n\n\nconst greetings = [\n  \"Hola, que puedo hacer por ti hoy?\",\n  \"Buenas tardes\",\n  \"Estimado, como puedo ayudarte?\",\n  \"Hola, por que me miras? Se que soy hermosa, pero no me mires asi\",\n  \"Hola, no me mires asi porque me desgasto\"\n]\n\n\nconnect(\"MQTT\", {\n  ...environment.mqtt,\n  topic: \"eva/camera/image\"\n}).pipe(\n  filter(x => x.message),\n  throttleTime(200),\n  base64ToBlob(),\n  blobToImage,\n  map(({message: img, connection}) => {\n    const faceLandmarks = poseLandmarker.detect(img);\n    if (faceLandmarks.length === 0) {\n      connection.send({topic: \"eva/neck/animation\", message:  \"c\"});\n      return {message: null, connection};\n    }\n    const [x,y,z] = calculateCentroid(faceLandmarks[0]);\n    const distance = visionLine-x;\n    const relativeDistance = Math.abs(distance)/x;\n    if (relativeDistance <= threshold)\n      return {message: null, connection};\n    connection.send({topic: \"eva/neck/animation\", message:  distance > 0 ? \"r\" : \"l\"});\n    return {message: math.distance([x,y,z], [0,0,0]), connection};\n  }),\n  filter(x => x.message && x.message <= 1.2),\n  throttleTime(7000),\n  tap(({connection}) => {\n    connection.send({topic: \"hermes/tts/say\", message: serialize({text: greetings[randint(0,greetings.length)]})})\n  })\n)",
+                      "language": "javascript",
+                      "output": ""
+                    },
+                    "index": 7,
+                    "lastEditedBy": "c4924e4b-2e55-4f9b-bf11-e67e6d7f2d10",
+                    "_deleted": false
+                  }
+                }
+              }
+            ],
+            "creator": "fvaguydpuy",
+            "time": 1684618645371.01
+          }
+        ],
+        [
+          {
+            "body": [
+              {
+                "ifMatch": {
+                  "$set": {
+                    "data": {
+                      "code": "import {\n  PoseLandmarker,\n  FilesetResolver,\n  DrawingUtils\n} from \"https://cdn.skypack.dev/@mediapipe/tasks-vision@0.10.0\";\n\nconst filesetResolver = await FilesetResolver.forVisionTasks(\n    \"https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.0/wasm\"\n);\n\n/* \n   TODO: I think this function introduce a high overhead, so it should be migrated to WASM C.\n*/\nfunction calculateCentroid(landmarks) {\n    const sum = landmarks.reduce((acc, landmark) => {\n        acc[0] = landmark.x + acc[0];\n        acc[1] = landmark.y + acc[1];\n        acc[2] = landmark.z + acc[2];\n        return acc;\n    }, [0, 0, 0]);\n    return sum.map(coord => coord / landmarks.length);\n}\n\nconst vision = await FilesetResolver.forVisionTasks(\n    \"https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.0/wasm\"\n  );\n\nconst poseLandmarker = await PoseLandmarker.createFromOptions(vision, {\n    baseOptions: {\n      modelAssetPath: `https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task`,\n      delegate: \"GPU\"\n    },\n    runningMode: \"IMAGE\",\n    numPoses: 2\n});\n\n\nconst visionLine = 0.5;\nconst threshold = 0.3;\n\n\nconst greetings = [\n  \"Hola, que puedo hacer por ti hoy?\",\n  \"Buenas tardes\",\n  \"Estimado, como puedo ayudarte?\",\n  \"Hola, por que me miras? Se que soy hermosa, pero no me mires asi\",\n  \"Hola, no me mires asi porque me desgasto\"\n]\n\n\nconnect(\"MQTT\", {\n  ...environment.mqtt,\n  topic: \"eva/camera/image\"\n}).pipe(\n  filter(x => x.message),\n  throttleTime(200),\n  base64ToBlob(),\n  blobToImage,\n  map(({message: img, connection}) => {\n    const faceLandmarks = poseLandmarker.detect(img);\n    console.log\n    if (faceLandmarks.length === 0) {\n      connection.send({topic: \"eva/neck/animation\", message:  \"c\"});\n      return {message: null, connection};\n    }\n    const [x,y,z] = calculateCentroid(faceLandmarks[0]);\n    const distance = visionLine-x;\n    const relativeDistance = Math.abs(distance)/x;\n    if (relativeDistance <= threshold)\n      return {message: null, connection};\n    connection.send({topic: \"eva/neck/animation\", message:  distance > 0 ? \"r\" : \"l\"});\n    return {message: math.distance([x,y,z], [0,0,0]), connection};\n  }),\n  filter(x => x.message && x.message <= 1.2),\n  throttleTime(7000),\n  tap(({connection}) => {\n    connection.send({topic: \"hermes/tts/say\", message: serialize({text: greetings[randint(0,greetings.length)]})})\n  })\n)",
+                      "language": "javascript",
+                      "output": ""
+                    },
+                    "index": 7,
+                    "lastEditedBy": "c4924e4b-2e55-4f9b-bf11-e67e6d7f2d10",
+                    "_deleted": false
+                  }
+                }
+              }
+            ],
+            "creator": "fvaguydpuy",
+            "time": 1684618648298.06
+          }
+        ],
+        [
+          {
+            "body": [
+              {
+                "ifMatch": {
+                  "$set": {
+                    "data": {
+                      "code": "import {\n  PoseLandmarker,\n  FilesetResolver,\n  DrawingUtils\n} from \"https://cdn.skypack.dev/@mediapipe/tasks-vision@0.10.0\";\n\nconst filesetResolver = await FilesetResolver.forVisionTasks(\n    \"https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.0/wasm\"\n);\n\n/* \n   TODO: I think this function introduce a high overhead, so it should be migrated to WASM C.\n*/\nfunction calculateCentroid(landmarks) {\n    const sum = landmarks.reduce((acc, landmark) => {\n        acc[0] = landmark.x + acc[0];\n        acc[1] = landmark.y + acc[1];\n        acc[2] = landmark.z + acc[2];\n        return acc;\n    }, [0, 0, 0]);\n    return sum.map(coord => coord / landmarks.length);\n}\n\nconst vision = await FilesetResolver.forVisionTasks(\n    \"https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.0/wasm\"\n  );\n\nconst poseLandmarker = await PoseLandmarker.createFromOptions(vision, {\n    baseOptions: {\n      modelAssetPath: `https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task`,\n      delegate: \"GPU\"\n    },\n    runningMode: \"IMAGE\",\n    numPoses: 2\n});\n\n\nconst visionLine = 0.5;\nconst threshold = 0.3;\n\n\nconst greetings = [\n  \"Hola, que puedo hacer por ti hoy?\",\n  \"Buenas tardes\",\n  \"Estimado, como puedo ayudarte?\",\n  \"Hola, por que me miras? Se que soy hermosa, pero no me mires asi\",\n  \"Hola, no me mires asi porque me desgasto\"\n]\n\n\nconnect(\"MQTT\", {\n  ...environment.mqtt,\n  topic: \"eva/camera/image\"\n}).pipe(\n  filter(x => x.message),\n  throttleTime(200),\n  base64ToBlob(),\n  blobToImage,\n  map(({message: img, connection}) => {\n    const lan = poseLandmarker.detect(img);\n    console.log\n    if (faceLandmarks.length === 0) {\n      connection.send({topic: \"eva/neck/animation\", message:  \"c\"});\n      return {message: null, connection};\n    }\n    const [x,y,z] = calculateCentroid(faceLandmarks[0]);\n    const distance = visionLine-x;\n    const relativeDistance = Math.abs(distance)/x;\n    if (relativeDistance <= threshold)\n      return {message: null, connection};\n    connection.send({topic: \"eva/neck/animation\", message:  distance > 0 ? \"r\" : \"l\"});\n    return {message: math.distance([x,y,z], [0,0,0]), connection};\n  }),\n  filter(x => x.message && x.message <= 1.2),\n  throttleTime(7000),\n  tap(({connection}) => {\n    connection.send({topic: \"hermes/tts/say\", message: serialize({text: greetings[randint(0,greetings.length)]})})\n  })\n)",
+                      "language": "javascript",
+                      "output": ""
+                    },
+                    "index": 7,
+                    "lastEditedBy": "c4924e4b-2e55-4f9b-bf11-e67e6d7f2d10",
+                    "_deleted": false
+                  }
+                }
+              }
+            ],
+            "creator": "fvaguydpuy",
+            "time": 1684618655515.02
+          }
+        ],
+        [
+          {
+            "body": [
+              {
+                "ifMatch": {
+                  "$set": {
+                    "data": {
+                      "code": "import {\n  PoseLandmarker,\n  FilesetResolver,\n  DrawingUtils\n} from \"https://cdn.skypack.dev/@mediapipe/tasks-vision@0.10.0\";\n\nconst filesetResolver = await FilesetResolver.forVisionTasks(\n    \"https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.0/wasm\"\n);\n\n/* \n   TODO: I think this function introduce a high overhead, so it should be migrated to WASM C.\n*/\nfunction calculateCentroid(landmarks) {\n    const sum = landmarks.reduce((acc, landmark) => {\n        acc[0] = landmark.x + acc[0];\n        acc[1] = landmark.y + acc[1];\n        acc[2] = landmark.z + acc[2];\n        return acc;\n    }, [0, 0, 0]);\n    return sum.map(coord => coord / landmarks.length);\n}\n\nconst vision = await FilesetResolver.forVisionTasks(\n    \"https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.0/wasm\"\n  );\n\nconst poseLandmarker = await PoseLandmarker.createFromOptions(vision, {\n    baseOptions: {\n      modelAssetPath: `https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task`,\n      delegate: \"GPU\"\n    },\n    runningMode: \"IMAGE\",\n    numPoses: 2\n});\n\n\nconst visionLine = 0.5;\nconst threshold = 0.3;\n\n\nconst greetings = [\n  \"Hola, que puedo hacer por ti hoy?\",\n  \"Buenas tardes\",\n  \"Estimado, como puedo ayudarte?\",\n  \"Hola, por que me miras? Se que soy hermosa, pero no me mires asi\",\n  \"Hola, no me mires asi porque me desgasto\"\n]\n\n\nconnect(\"MQTT\", {\n  ...environment.mqtt,\n  topic: \"eva/camera/image\"\n}).pipe(\n  filter(x => x.message),\n  throttleTime(200),\n  base64ToBlob(),\n  blobToImage,\n  map(({message: img, connection}) => {\n    const landmarks = poseLandmarker.detect(img);\n    console.log\n    if (faceLandmarks.length === 0) {\n      connection.send({topic: \"eva/neck/animation\", message:  \"c\"});\n      return {message: null, connection};\n    }\n    const [x,y,z] = calculateCentroid(faceLandmarks[0]);\n    const distance = visionLine-x;\n    const relativeDistance = Math.abs(distance)/x;\n    if (relativeDistance <= threshold)\n      return {message: null, connection};\n    connection.send({topic: \"eva/neck/animation\", message:  distance > 0 ? \"r\" : \"l\"});\n    return {message: math.distance([x,y,z], [0,0,0]), connection};\n  }),\n  filter(x => x.message && x.message <= 1.2),\n  throttleTime(7000),\n  tap(({connection}) => {\n    connection.send({topic: \"hermes/tts/say\", message: serialize({text: greetings[randint(0,greetings.length)]})})\n  })\n)",
+                      "language": "javascript",
+                      "output": ""
+                    },
+                    "index": 7,
+                    "lastEditedBy": "c4924e4b-2e55-4f9b-bf11-e67e6d7f2d10",
+                    "_deleted": false
+                  }
+                }
+              }
+            ],
+            "creator": "fvaguydpuy",
+            "time": 1684618656738.01
+          }
+        ],
+        [
+          {
+            "body": [
+              {
+                "ifMatch": {
+                  "$set": {
+                    "data": {
+                      "code": "import {\n  PoseLandmarker,\n  FilesetResolver,\n  DrawingUtils\n} from \"https://cdn.skypack.dev/@mediapipe/tasks-vision@0.10.0\";\n\nconst filesetResolver = await FilesetResolver.forVisionTasks(\n    \"https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.0/wasm\"\n);\n\n/* \n   TODO: I think this function introduce a high overhead, so it should be migrated to WASM C.\n*/\nfunction calculateCentroid(landmarks) {\n    const sum = landmarks.reduce((acc, landmark) => {\n        acc[0] = landmark.x + acc[0];\n        acc[1] = landmark.y + acc[1];\n        acc[2] = landmark.z + acc[2];\n        return acc;\n    }, [0, 0, 0]);\n    return sum.map(coord => coord / landmarks.length);\n}\n\nconst vision = await FilesetResolver.forVisionTasks(\n    \"https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.0/wasm\"\n  );\n\nconst poseLandmarker = await PoseLandmarker.createFromOptions(vision, {\n    baseOptions: {\n      modelAssetPath: `https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task`,\n      delegate: \"GPU\"\n    },\n    runningMode: \"IMAGE\",\n    numPoses: 2\n});\n\n\nconst visionLine = 0.5;\nconst threshold = 0.3;\n\n\nconst greetings = [\n  \"Hola, que puedo hacer por ti hoy?\",\n  \"Buenas tardes\",\n  \"Estimado, como puedo ayudarte?\",\n  \"Hola, por que me miras? Se que soy hermosa, pero no me mires asi\",\n  \"Hola, no me mires asi porque me desgasto\"\n]\n\n\nconnect(\"MQTT\", {\n  ...environment.mqtt,\n  topic: \"eva/camera/image\"\n}).pipe(\n  filter(x => x.message),\n  throttleTime(200),\n  base64ToBlob(),\n  blobToImage,\n  map(({message: img, connection}) => {\n    const landmarks = poseLandmarker.detect(img);\n    console.log(landmarks)\n    if (faceLandmarks.length === 0) {\n      connection.send({topic: \"eva/neck/animation\", message:  \"c\"});\n      return {message: null, connection};\n    }\n    const [x,y,z] = calculateCentroid(faceLandmarks[0]);\n    const distance = visionLine-x;\n    const relativeDistance = Math.abs(distance)/x;\n    if (relativeDistance <= threshold)\n      return {message: null, connection};\n    connection.send({topic: \"eva/neck/animation\", message:  distance > 0 ? \"r\" : \"l\"});\n    return {message: math.distance([x,y,z], [0,0,0]), connection};\n  }),\n  filter(x => x.message && x.message <= 1.2),\n  throttleTime(7000),\n  tap(({connection}) => {\n    connection.send({topic: \"hermes/tts/say\", message: serialize({text: greetings[randint(0,greetings.length)]})})\n  })\n)",
+                      "language": "javascript",
+                      "output": ""
+                    },
+                    "index": 7,
+                    "lastEditedBy": "c4924e4b-2e55-4f9b-bf11-e67e6d7f2d10",
+                    "_deleted": false
+                  }
+                }
+              }
+            ],
+            "creator": "fvaguydpuy",
+            "time": 1684618659409.02
+          }
+        ],
+        [
+          {
+            "body": [
+              {
+                "ifMatch": {
+                  "$set": {
+                    "data": {
+                      "code": "import {\n  PoseLandmarker,\n  FilesetResolver,\n  DrawingUtils\n} from \"https://cdn.skypack.dev/@mediapipe/tasks-vision@0.10.0\";\n\nconst filesetResolver = await FilesetResolver.forVisionTasks(\n    \"https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.0/wasm\"\n);\n\n/* \n   TODO: I think this function introduce a high overhead, so it should be migrated to WASM C.\n*/\nfunction calculateCentroid(landmarks) {\n    const sum = landmarks.reduce((acc, landmark) => {\n        acc[0] = landmark.x + acc[0];\n        acc[1] = landmark.y + acc[1];\n        acc[2] = landmark.z + acc[2];\n        return acc;\n    }, [0, 0, 0]);\n    return sum.map(coord => coord / landmarks.length);\n}\n\nconst vision = await FilesetResolver.forVisionTasks(\n    \"https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.0/wasm\"\n  );\n\nconst poseLandmarker = await PoseLandmarker.createFromOptions(vision, {\n    baseOptions: {\n      modelAssetPath: `https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task`,\n      delegate: \"GPU\"\n    },\n    runningMode: \"IMAGE\",\n    numPoses: 2\n});\n\n\nconst visionLine = 0.5;\nconst threshold = 0.3;\n\n\nconst greetings = [\n  \"Hola, que puedo hacer por ti hoy?\",\n  \"Buenas tardes\",\n  \"Estimado, como puedo ayudarte?\",\n  \"Hola, por que me miras? Se que soy hermosa, pero no me mires asi\",\n  \"Hola, no me mires asi porque me desgasto\"\n]\n\n\nconnect(\"MQTT\", {\n  ...environment.mqtt,\n  topic: \"eva/camera/image\"\n}).pipe(\n  filter(x => x.message),\n  throttleTime(200),\n  base64ToBlob(),\n  blobToImage,\n  map(({message: img, connection}) => {\n    const landmarks = poseLandmarker.detect(img);\n    console.log(landmarks);\n    if (faceLandmarks.length === 0) {\n      connection.send({topic: \"eva/neck/animation\", message:  \"c\"});\n      return {message: null, connection};\n    }\n    const [x,y,z] = calculateCentroid(faceLandmarks[0]);\n    const distance = visionLine-x;\n    const relativeDistance = Math.abs(distance)/x;\n    if (relativeDistance <= threshold)\n      return {message: null, connection};\n    connection.send({topic: \"eva/neck/animation\", message:  distance > 0 ? \"r\" : \"l\"});\n    return {message: math.distance([x,y,z], [0,0,0]), connection};\n  }),\n  filter(x => x.message && x.message <= 1.2),\n  throttleTime(7000),\n  tap(({connection}) => {\n    connection.send({topic: \"hermes/tts/say\", message: serialize({text: greetings[randint(0,greetings.length)]})})\n  })\n)",
+                      "language": "javascript",
+                      "output": ""
+                    },
+                    "index": 7,
+                    "lastEditedBy": "c4924e4b-2e55-4f9b-bf11-e67e6d7f2d10",
+                    "_deleted": false
+                  }
+                }
+              }
+            ],
+            "creator": "fvaguydpuy",
+            "time": 1684618660851.01
+          }
+        ],
+        [
+          {
+            "body": [
+              {
+                "ifMatch": {
+                  "$set": {
+                    "data": {
+                      "code": "import {\n  PoseLandmarker,\n  FilesetResolver,\n  DrawingUtils\n} from \"https://cdn.skypack.dev/@mediapipe/tasks-vision@0.10.0\";\n\nconst filesetResolver = await FilesetResolver.forVisionTasks(\n    \"https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.0/wasm\"\n);\n\n/* \n   TODO: I think this function introduce a high overhead, so it should be migrated to WASM C.\n*/\nfunction calculateCentroid(landmarks) {\n    const sum = landmarks.reduce((acc, landmark) => {\n        acc[0] = landmark.x + acc[0];\n        acc[1] = landmark.y + acc[1];\n        acc[2] = landmark.z + acc[2];\n        return acc;\n    }, [0, 0, 0]);\n    return sum.map(coord => coord / landmarks.length);\n}\n\nconst vision = await FilesetResolver.forVisionTasks(\n    \"https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.0/wasm\"\n  );\n\nconst poseLandmarker = await PoseLandmarker.createFromOptions(vision, {\n    baseOptions: {\n      modelAssetPath: `https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task`,\n      delegate: \"GPU\"\n    },\n    runningMode: \"IMAGE\",\n    numPoses: 2\n});\n\n\nconst visionLine = 0.5;\nconst threshold = 0.3;\n\n\nconst greetings = [\n  \"Hola, que puedo hacer por ti hoy?\",\n  \"Buenas tardes\",\n  \"Estimado, como puedo ayudarte?\",\n  \"Hola, por que me miras? Se que soy hermosa, pero no me mires asi\",\n  \"Hola, no me mires asi porque me desgasto\"\n]\n\n\nconnect(\"MQTT\", {\n  ...environment.mqtt,\n  topic: \"eva/camera/image\"\n}).pipe(\n  filter(x => x.message),\n  throttleTime(200),\n  base64ToBlob(),\n  blobToImage,\n  map(({message: img, connection}) => {\n    const landmarks = poseLandmarker.detect(img);\n    console.log(landmarks);\n    if (faceLandmarks.length === 0) {\n      connection.send({topic: \"eva/neck/animation\", message:  \"c\"});\n      return {message: null, connection};\n    }\n    const [x,y,z] = calculateCentroid(faceLandmarks[0]);\n    const distance = visionLine-x;\n    const relativeDistance = Math.abs(distance)/x;\n    if (relativeDistance <= threshold)\n      return {message: null, connection};\n    connection.send({topic: \"eva/neck/animation\", message:  distance > 0 ? \"r\" : \"l\"});\n    return {message: math.distance([x,y,z], [0,0,0]), connection};\n  }),\n  filter(x => x.message && x.message <= 1.2),\n  throttleTime(7000),\n  tap(({connection}) => {\n    connection.send({topic: \"hermes/tts/say\", message: serialize({text: greetings[randint(0,greetings.length)]})})\n  })\n)",
+                      "language": "javascript",
+                      "output": "Uncaught ReferenceError: faceLandmarks is not defined\n"
+                    },
+                    "index": 7,
+                    "lastEditedBy": "c4924e4b-2e55-4f9b-bf11-e67e6d7f2d10",
+                    "_deleted": false
+                  }
+                }
+              }
+            ],
+            "creator": "fvaguydpuy",
+            "time": 1684618762546.01
+          }
+        ],
+        [
+          {
+            "body": [
+              {
+                "ifMatch": {
+                  "$set": {
+                    "data": {
+                      "code": "import {\n  PoseLandmarker,\n  FilesetResolver,\n  DrawingUtils\n} from \"https://cdn.skypack.dev/@mediapipe/tasks-vision@0.10.0\";\n\nconst filesetResolver = await FilesetResolver.forVisionTasks(\n    \"https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.0/wasm\"\n);\n\n/* \n   TODO: I think this function introduce a high overhead, so it should be migrated to WASM C.\n*/\nfunction calculateCentroid(landmarks) {\n    const sum = landmarks.reduce((acc, landmark) => {\n        acc[0] = landmark.x + acc[0];\n        acc[1] = landmark.y + acc[1];\n        acc[2] = landmark.z + acc[2];\n        return acc;\n    }, [0, 0, 0]);\n    return sum.map(coord => coord / landmarks.length);\n}\n\nconst vision = await FilesetResolver.forVisionTasks(\n    \"https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.0/wasm\"\n  );\n\nconst poseLandmarker = await PoseLandmarker.createFromOptions(vision, {\n    baseOptions: {\n      modelAssetPath: `https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task`,\n      delegate: \"GPU\"\n    },\n    runningMode: \"IMAGE\",\n    numPoses: 2\n});\n\n\nconst visionLine = 0.5;\nconst threshold = 0.3;\n\n\nconst greetings = [\n  \"Hola, que puedo hacer por ti hoy?\",\n  \"Buenas tardes\",\n  \"Estimado, como puedo ayudarte?\",\n  \"Hola, por que me miras? Se que soy hermosa, pero no me mires asi\",\n  \"Hola, no me mires asi porque me desgasto\"\n]\n\n\nconnect(\"MQTT\", {\n  ...environment.mqtt,\n  topic: \"eva/camera/image\"\n}).pipe(\n  filter(x => x.message),\n  throttleTime(200),\n  base64ToBlob(),\n  blobToImage,\n  map(({message: img, connection}) => {\n    const landmarks = poseLandmarker.detect(img).;\n    console.log(landmarks);\n    if (faceLandmarks.length === 0) {\n      connection.send({topic: \"eva/neck/animation\", message:  \"c\"});\n      return {message: null, connection};\n    }\n    const [x,y,z] = calculateCentroid(faceLandmarks[0]);\n    const distance = visionLine-x;\n    const relativeDistance = Math.abs(distance)/x;\n    if (relativeDistance <= threshold)\n      return {message: null, connection};\n    connection.send({topic: \"eva/neck/animation\", message:  distance > 0 ? \"r\" : \"l\"});\n    return {message: math.distance([x,y,z], [0,0,0]), connection};\n  }),\n  filter(x => x.message && x.message <= 1.2),\n  throttleTime(7000),\n  tap(({connection}) => {\n    connection.send({topic: \"hermes/tts/say\", message: serialize({text: greetings[randint(0,greetings.length)]})})\n  })\n)",
+                      "language": "javascript",
+                      "output": "Uncaught ReferenceError: faceLandmarks is not defined\n"
+                    },
+                    "index": 7,
+                    "lastEditedBy": "c4924e4b-2e55-4f9b-bf11-e67e6d7f2d10",
+                    "_deleted": false
+                  }
+                }
+              }
+            ],
+            "creator": "fvaguydpuy",
+            "time": 1684618769882.02
+          }
+        ],
+        [
+          {
+            "body": [
+              {
+                "ifMatch": {
+                  "$set": {
+                    "data": {
+                      "code": "import {\n  PoseLandmarker,\n  FilesetResolver,\n  DrawingUtils\n} from \"https://cdn.skypack.dev/@mediapipe/tasks-vision@0.10.0\";\n\nconst filesetResolver = await FilesetResolver.forVisionTasks(\n    \"https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.0/wasm\"\n);\n\n/* \n   TODO: I think this function introduce a high overhead, so it should be migrated to WASM C.\n*/\nfunction calculateCentroid(landmarks) {\n    const sum = landmarks.reduce((acc, landmark) => {\n        acc[0] = landmark.x + acc[0];\n        acc[1] = landmark.y + acc[1];\n        acc[2] = landmark.z + acc[2];\n        return acc;\n    }, [0, 0, 0]);\n    return sum.map(coord => coord / landmarks.length);\n}\n\nconst vision = await FilesetResolver.forVisionTasks(\n    \"https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.0/wasm\"\n  );\n\nconst poseLandmarker = await PoseLandmarker.createFromOptions(vision, {\n    baseOptions: {\n      modelAssetPath: `https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task`,\n      delegate: \"GPU\"\n    },\n    runningMode: \"IMAGE\",\n    numPoses: 2\n});\n\n\nconst visionLine = 0.5;\nconst threshold = 0.3;\n\n\nconst greetings = [\n  \"Hola, que puedo hacer por ti hoy?\",\n  \"Buenas tardes\",\n  \"Estimado, como puedo ayudarte?\",\n  \"Hola, por que me miras? Se que soy hermosa, pero no me mires asi\",\n  \"Hola, no me mires asi porque me desgasto\"\n]\n\n\nconnect(\"MQTT\", {\n  ...environment.mqtt,\n  topic: \"eva/camera/image\"\n}).pipe(\n  filter(x => x.message),\n  throttleTime(200),\n  base64ToBlob(),\n  blobToImage,\n  map(({message: img, connection}) => {\n    const landmarks = poseLandmarker.detect(img).lan;\n    console.log(landmarks);\n    if (faceLandmarks.length === 0) {\n      connection.send({topic: \"eva/neck/animation\", message:  \"c\"});\n      return {message: null, connection};\n    }\n    const [x,y,z] = calculateCentroid(faceLandmarks[0]);\n    const distance = visionLine-x;\n    const relativeDistance = Math.abs(distance)/x;\n    if (relativeDistance <= threshold)\n      return {message: null, connection};\n    connection.send({topic: \"eva/neck/animation\", message:  distance > 0 ? \"r\" : \"l\"});\n    return {message: math.distance([x,y,z], [0,0,0]), connection};\n  }),\n  filter(x => x.message && x.message <= 1.2),\n  throttleTime(7000),\n  tap(({connection}) => {\n    connection.send({topic: \"hermes/tts/say\", message: serialize({text: greetings[randint(0,greetings.length)]})})\n  })\n)",
+                      "language": "javascript",
+                      "output": "Uncaught ReferenceError: faceLandmarks is not defined\n"
+                    },
+                    "index": 7,
+                    "lastEditedBy": "c4924e4b-2e55-4f9b-bf11-e67e6d7f2d10",
+                    "_deleted": false
+                  }
+                }
+              }
+            ],
+            "creator": "fvaguydpuy",
+            "time": 1684618771066.06
+          }
+        ],
+        [
+          {
+            "body": [
+              {
+                "ifMatch": {
+                  "$set": {
+                    "data": {
+                      "code": "import {\n  PoseLandmarker,\n  FilesetResolver,\n  DrawingUtils\n} from \"https://cdn.skypack.dev/@mediapipe/tasks-vision@0.10.0\";\n\nconst filesetResolver = await FilesetResolver.forVisionTasks(\n    \"https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.0/wasm\"\n);\n\n/* \n   TODO: I think this function introduce a high overhead, so it should be migrated to WASM C.\n*/\nfunction calculateCentroid(landmarks) {\n    const sum = landmarks.reduce((acc, landmark) => {\n        acc[0] = landmark.x + acc[0];\n        acc[1] = landmark.y + acc[1];\n        acc[2] = landmark.z + acc[2];\n        return acc;\n    }, [0, 0, 0]);\n    return sum.map(coord => coord / landmarks.length);\n}\n\nconst vision = await FilesetResolver.forVisionTasks(\n    \"https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.0/wasm\"\n  );\n\nconst poseLandmarker = await PoseLandmarker.createFromOptions(vision, {\n    baseOptions: {\n      modelAssetPath: `https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task`,\n      delegate: \"GPU\"\n    },\n    runningMode: \"IMAGE\",\n    numPoses: 2\n});\n\n\nconst visionLine = 0.5;\nconst threshold = 0.3;\n\n\nconst greetings = [\n  \"Hola, que puedo hacer por ti hoy?\",\n  \"Buenas tardes\",\n  \"Estimado, como puedo ayudarte?\",\n  \"Hola, por que me miras? Se que soy hermosa, pero no me mires asi\",\n  \"Hola, no me mires asi porque me desgasto\"\n]\n\n\nconnect(\"MQTT\", {\n  ...environment.mqtt,\n  topic: \"eva/camera/image\"\n}).pipe(\n  filter(x => x.message),\n  throttleTime(200),\n  base64ToBlob(),\n  blobToImage,\n  map(({message: img, connection}) => {\n    const landmarks = poseLandmarker.detect(img).land;\n    console.log(landmarks);\n    if (faceLandmarks.length === 0) {\n      connection.send({topic: \"eva/neck/animation\", message:  \"c\"});\n      return {message: null, connection};\n    }\n    const [x,y,z] = calculateCentroid(faceLandmarks[0]);\n    const distance = visionLine-x;\n    const relativeDistance = Math.abs(distance)/x;\n    if (relativeDistance <= threshold)\n      return {message: null, connection};\n    connection.send({topic: \"eva/neck/animation\", message:  distance > 0 ? \"r\" : \"l\"});\n    return {message: math.distance([x,y,z], [0,0,0]), connection};\n  }),\n  filter(x => x.message && x.message <= 1.2),\n  throttleTime(7000),\n  tap(({connection}) => {\n    connection.send({topic: \"hermes/tts/say\", message: serialize({text: greetings[randint(0,greetings.length)]})})\n  })\n)",
+                      "language": "javascript",
+                      "output": "Uncaught ReferenceError: faceLandmarks is not defined\n"
+                    },
+                    "index": 7,
+                    "lastEditedBy": "c4924e4b-2e55-4f9b-bf11-e67e6d7f2d10",
+                    "_deleted": false
+                  }
+                }
+              }
+            ],
+            "creator": "fvaguydpuy",
+            "time": 1684618771650.01
+          }
+        ],
+        [
+          {
+            "body": [
+              {
+                "ifMatch": {
+                  "$set": {
+                    "data": {
+                      "code": "import {\n  PoseLandmarker,\n  FilesetResolver,\n  DrawingUtils\n} from \"https://cdn.skypack.dev/@mediapipe/tasks-vision@0.10.0\";\n\nconst filesetResolver = await FilesetResolver.forVisionTasks(\n    \"https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.0/wasm\"\n);\n\n/* \n   TODO: I think this function introduce a high overhead, so it should be migrated to WASM C.\n*/\nfunction calculateCentroid(landmarks) {\n    const sum = landmarks.reduce((acc, landmark) => {\n        acc[0] = landmark.x + acc[0];\n        acc[1] = landmark.y + acc[1];\n        acc[2] = landmark.z + acc[2];\n        return acc;\n    }, [0, 0, 0]);\n    return sum.map(coord => coord / landmarks.length);\n}\n\nconst vision = await FilesetResolver.forVisionTasks(\n    \"https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.0/wasm\"\n  );\n\nconst poseLandmarker = await PoseLandmarker.createFromOptions(vision, {\n    baseOptions: {\n      modelAssetPath: `https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task`,\n      delegate: \"GPU\"\n    },\n    runningMode: \"IMAGE\",\n    numPoses: 2\n});\n\n\nconst visionLine = 0.5;\nconst threshold = 0.3;\n\n\nconst greetings = [\n  \"Hola, que puedo hacer por ti hoy?\",\n  \"Buenas tardes\",\n  \"Estimado, como puedo ayudarte?\",\n  \"Hola, por que me miras? Se que soy hermosa, pero no me mires asi\",\n  \"Hola, no me mires asi porque me desgasto\"\n]\n\n\nconnect(\"MQTT\", {\n  ...environment.mqtt,\n  topic: \"eva/camera/image\"\n}).pipe(\n  filter(x => x.message),\n  throttleTime(200),\n  base64ToBlob(),\n  blobToImage,\n  map(({message: img, connection}) => {\n    const landmarks = poseLandmarker.detect(img).landm;\n    console.log(landmarks);\n    if (faceLandmarks.length === 0) {\n      connection.send({topic: \"eva/neck/animation\", message:  \"c\"});\n      return {message: null, connection};\n    }\n    const [x,y,z] = calculateCentroid(faceLandmarks[0]);\n    const distance = visionLine-x;\n    const relativeDistance = Math.abs(distance)/x;\n    if (relativeDistance <= threshold)\n      return {message: null, connection};\n    connection.send({topic: \"eva/neck/animation\", message:  distance > 0 ? \"r\" : \"l\"});\n    return {message: math.distance([x,y,z], [0,0,0]), connection};\n  }),\n  filter(x => x.message && x.message <= 1.2),\n  throttleTime(7000),\n  tap(({connection}) => {\n    connection.send({topic: \"hermes/tts/say\", message: serialize({text: greetings[randint(0,greetings.length)]})})\n  })\n)",
+                      "language": "javascript",
+                      "output": "Uncaught ReferenceError: faceLandmarks is not defined\n"
+                    },
+                    "index": 7,
+                    "lastEditedBy": "c4924e4b-2e55-4f9b-bf11-e67e6d7f2d10",
+                    "_deleted": false
+                  }
+                }
+              }
+            ],
+            "creator": "fvaguydpuy",
+            "time": 1684618772170.01
+          }
+        ],
+        [
+          {
+            "body": [
+              {
+                "ifMatch": {
+                  "$set": {
+                    "data": {
+                      "code": "import {\n  PoseLandmarker,\n  FilesetResolver,\n  DrawingUtils\n} from \"https://cdn.skypack.dev/@mediapipe/tasks-vision@0.10.0\";\n\nconst filesetResolver = await FilesetResolver.forVisionTasks(\n    \"https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.0/wasm\"\n);\n\n/* \n   TODO: I think this function introduce a high overhead, so it should be migrated to WASM C.\n*/\nfunction calculateCentroid(landmarks) {\n    const sum = landmarks.reduce((acc, landmark) => {\n        acc[0] = landmark.x + acc[0];\n        acc[1] = landmark.y + acc[1];\n        acc[2] = landmark.z + acc[2];\n        return acc;\n    }, [0, 0, 0]);\n    return sum.map(coord => coord / landmarks.length);\n}\n\nconst vision = await FilesetResolver.forVisionTasks(\n    \"https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.0/wasm\"\n  );\n\nconst poseLandmarker = await PoseLandmarker.createFromOptions(vision, {\n    baseOptions: {\n      modelAssetPath: `https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task`,\n      delegate: \"GPU\"\n    },\n    runningMode: \"IMAGE\",\n    numPoses: 2\n});\n\n\nconst visionLine = 0.5;\nconst threshold = 0.3;\n\n\nconst greetings = [\n  \"Hola, que puedo hacer por ti hoy?\",\n  \"Buenas tardes\",\n  \"Estimado, como puedo ayudarte?\",\n  \"Hola, por que me miras? Se que soy hermosa, pero no me mires asi\",\n  \"Hola, no me mires asi porque me desgasto\"\n]\n\n\nconnect(\"MQTT\", {\n  ...environment.mqtt,\n  topic: \"eva/camera/image\"\n}).pipe(\n  filter(x => x.message),\n  throttleTime(200),\n  base64ToBlob(),\n  blobToImage,\n  map(({message: img, connection}) => {\n    const landmarks = poseLandmarker.detect(img).landmarks;\n    console.log(landmarks);\n    if (faceLandmarks.length === 0) {\n      connection.send({topic: \"eva/neck/animation\", message:  \"c\"});\n      return {message: null, connection};\n    }\n    const [x,y,z] = calculateCentroid(faceLandmarks[0]);\n    const distance = visionLine-x;\n    const relativeDistance = Math.abs(distance)/x;\n    if (relativeDistance <= threshold)\n      return {message: null, connection};\n    connection.send({topic: \"eva/neck/animation\", message:  distance > 0 ? \"r\" : \"l\"});\n    return {message: math.distance([x,y,z], [0,0,0]), connection};\n  }),\n  filter(x => x.message && x.message <= 1.2),\n  throttleTime(7000),\n  tap(({connection}) => {\n    connection.send({topic: \"hermes/tts/say\", message: serialize({text: greetings[randint(0,greetings.length)]})})\n  })\n)",
+                      "language": "javascript",
+                      "output": "Uncaught ReferenceError: faceLandmarks is not defined\n"
+                    },
+                    "index": 7,
+                    "lastEditedBy": "c4924e4b-2e55-4f9b-bf11-e67e6d7f2d10",
+                    "_deleted": false
+                  }
+                }
+              }
+            ],
+            "creator": "fvaguydpuy",
+            "time": 1684618773076.01
+          }
+        ],
+        [
+          {
+            "body": [
+              {
+                "ifMatch": {
+                  "$set": {
+                    "data": {
+                      "code": "import {\n  PoseLandmarker,\n  FilesetResolver,\n  DrawingUtils\n} from \"https://cdn.skypack.dev/@mediapipe/tasks-vision@0.10.0\";\n\nconst filesetResolver = await FilesetResolver.forVisionTasks(\n    \"https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.0/wasm\"\n);\n\n/* \n   TODO: I think this function introduce a high overhead, so it should be migrated to WASM C.\n*/\nfunction calculateCentroid(landmarks) {\n    const sum = landmarks.reduce((acc, landmark) => {\n        acc[0] = landmark.x + acc[0];\n        acc[1] = landmark.y + acc[1];\n        acc[2] = landmark.z + acc[2];\n        return acc;\n    }, [0, 0, 0]);\n    return sum.map(coord => coord / landmarks.length);\n}\n\nconst vision = await FilesetResolver.forVisionTasks(\n    \"https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.0/wasm\"\n  );\n\nconst poseLandmarker = await PoseLandmarker.createFromOptions(vision, {\n    baseOptions: {\n      modelAssetPath: `https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task`,\n      delegate: \"GPU\"\n    },\n    runningMode: \"IMAGE\",\n    numPoses: 2\n});\n\n\nconst visionLine = 0.5;\nconst threshold = 0.3;\n\n\nconst greetings = [\n  \"Hola, que puedo hacer por ti hoy?\",\n  \"Buenas tardes\",\n  \"Estimado, como puedo ayudarte?\",\n  \"Hola, por que me miras? Se que soy hermosa, pero no me mires asi\",\n  \"Hola, no me mires asi porque me desgasto\"\n]\n\n\nconnect(\"MQTT\", {\n  ...environment.mqtt,\n  topic: \"eva/camera/image\"\n}).pipe(\n  filter(x => x.message),\n  throttleTime(200),\n  base64ToBlob(),\n  blobToImage,\n  map(({message: img, connection}) => {\n    const landmarks = poseLandmarker.detect(img).landmarks;\n    console.log(landmarks);\n    if (landmarks.length === 0) {\n      connection.send({topic: \"eva/neck/animation\", message:  \"c\"});\n      return {message: null, connection};\n    }\n    const [x,y,z] = calculateCentroid(faceLandmarks[0]);\n    const distance = visionLine-x;\n    const relativeDistance = Math.abs(distance)/x;\n    if (relativeDistance <= threshold)\n      return {message: null, connection};\n    connection.send({topic: \"eva/neck/animation\", message:  distance > 0 ? \"r\" : \"l\"});\n    return {message: math.distance([x,y,z], [0,0,0]), connection};\n  }),\n  filter(x => x.message && x.message <= 1.2),\n  throttleTime(7000),\n  tap(({connection}) => {\n    connection.send({topic: \"hermes/tts/say\", message: serialize({text: greetings[randint(0,greetings.length)]})})\n  })\n)",
+                      "language": "javascript",
+                      "output": "Uncaught ReferenceError: faceLandmarks is not defined\n"
+                    },
+                    "index": 7,
+                    "lastEditedBy": "c4924e4b-2e55-4f9b-bf11-e67e6d7f2d10",
+                    "_deleted": false
+                  }
+                }
+              }
+            ],
+            "creator": "fvaguydpuy",
+            "time": 1684618778610.02
+          }
+        ],
+        [
+          {
+            "body": [
+              {
+                "ifMatch": {
+                  "$set": {
+                    "data": {
+                      "code": "import {\n  PoseLandmarker,\n  FilesetResolver,\n  DrawingUtils\n} from \"https://cdn.skypack.dev/@mediapipe/tasks-vision@0.10.0\";\n\nconst filesetResolver = await FilesetResolver.forVisionTasks(\n    \"https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.0/wasm\"\n);\n\n/* \n   TODO: I think this function introduce a high overhead, so it should be migrated to WASM C.\n*/\nfunction calculateCentroid(landmarks) {\n    const sum = landmarks.reduce((acc, landmark) => {\n        acc[0] = landmark.x + acc[0];\n        acc[1] = landmark.y + acc[1];\n        acc[2] = landmark.z + acc[2];\n        return acc;\n    }, [0, 0, 0]);\n    return sum.map(coord => coord / landmarks.length);\n}\n\nconst vision = await FilesetResolver.forVisionTasks(\n    \"https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.0/wasm\"\n  );\n\nconst poseLandmarker = await PoseLandmarker.createFromOptions(vision, {\n    baseOptions: {\n      modelAssetPath: `https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task`,\n      delegate: \"GPU\"\n    },\n    runningMode: \"IMAGE\",\n    numPoses: 2\n});\n\n\nconst visionLine = 0.5;\nconst threshold = 0.3;\n\n\nconst greetings = [\n  \"Hola, que puedo hacer por ti hoy?\",\n  \"Buenas tardes\",\n  \"Estimado, como puedo ayudarte?\",\n  \"Hola, por que me miras? Se que soy hermosa, pero no me mires asi\",\n  \"Hola, no me mires asi porque me desgasto\"\n]\n\n\nconnect(\"MQTT\", {\n  ...environment.mqtt,\n  topic: \"eva/camera/image\"\n}).pipe(\n  filter(x => x.message),\n  throttleTime(200),\n  base64ToBlob(),\n  blobToImage,\n  map(({message: img, connection}) => {\n    const landmarks = poseLandmarker.detect(img).landmarks;\n    if (landmarks.length === 0) {\n      connection.send({topic: \"eva/neck/animation\", message:  \"c\"});\n      return {message: null, connection};\n    }\n    const [x,y,z] = calculateCentroid(faceLandmarks[0]);\n    const distance = visionLine-x;\n    const relativeDistance = Math.abs(distance)/x;\n    if (relativeDistance <= threshold)\n      return {message: null, connection};\n    connection.send({topic: \"eva/neck/animation\", message:  distance > 0 ? \"r\" : \"l\"});\n    return {message: math.distance([x,y,z], [0,0,0]), connection};\n  }),\n  filter(x => x.message && x.message <= 1.2),\n  throttleTime(7000),\n  tap(({connection}) => {\n    connection.send({topic: \"hermes/tts/say\", message: serialize({text: greetings[randint(0,greetings.length)]})})\n  })\n)",
+                      "language": "javascript",
+                      "output": "Uncaught ReferenceError: faceLandmarks is not defined\n"
+                    },
+                    "index": 7,
+                    "lastEditedBy": "c4924e4b-2e55-4f9b-bf11-e67e6d7f2d10",
+                    "_deleted": false
+                  }
+                }
+              }
+            ],
+            "creator": "fvaguydpuy",
+            "time": 1684618781629.01
+          }
+        ],
+        [
+          {
+            "body": [
+              {
+                "ifMatch": {
+                  "$set": {
+                    "data": {
+                      "code": "import {\n  PoseLandmarker,\n  FilesetResolver,\n  DrawingUtils\n} from \"https://cdn.skypack.dev/@mediapipe/tasks-vision@0.10.0\";\n\nconst filesetResolver = await FilesetResolver.forVisionTasks(\n    \"https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.0/wasm\"\n);\n\n/* \n   TODO: I think this function introduce a high overhead, so it should be migrated to WASM C.\n*/\nfunction calculateCentroid(landmarks) {\n    const sum = landmarks.reduce((acc, landmark) => {\n        acc[0] = landmark.x + acc[0];\n        acc[1] = landmark.y + acc[1];\n        acc[2] = landmark.z + acc[2];\n        return acc;\n    }, [0, 0, 0]);\n    return sum.map(coord => coord / landmarks.length);\n}\n\nconst vision = await FilesetResolver.forVisionTasks(\n    \"https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.0/wasm\"\n  );\n\nconst poseLandmarker = await PoseLandmarker.createFromOptions(vision, {\n    baseOptions: {\n      modelAssetPath: `https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task`,\n      delegate: \"GPU\"\n    },\n    runningMode: \"IMAGE\",\n    numPoses: 2\n});\n\n\nconst visionLine = 0.5;\nconst threshold = 0.3;\n\n\nconst greetings = [\n  \"Hola, que puedo hacer por ti hoy?\",\n  \"Buenas tardes\",\n  \"Estimado, como puedo ayudarte?\",\n  \"Hola, por que me miras? Se que soy hermosa, pero no me mires asi\",\n  \"Hola, no me mires asi porque me desgasto\"\n]\n\n\nconnect(\"MQTT\", {\n  ...environment.mqtt,\n  topic: \"eva/camera/image\"\n}).pipe(\n  filter(x => x.message),\n  throttleTime(200),\n  base64ToBlob(),\n  blobToImage,\n  map(({message: img, connection}) => {\n    const landmarks = poseLandmarker.detect(img).landmarks;\n    if (landmarks.length === 0) {\n      connection.send({topic: \"eva/neck/animation\", message:  \"c\"});\n      return {message: null, connection};\n    }\n    const [x,y,z] = calculateCentroid(landmarks[0]);\n    const distance = visionLine-x;\n    const relativeDistance = Math.abs(distance)/x;\n    if (relativeDistance <= threshold)\n      return {message: null, connection};\n    connection.send({topic: \"eva/neck/animation\", message:  distance > 0 ? \"r\" : \"l\"});\n    return {message: math.distance([x,y,z], [0,0,0]), connection};\n  }),\n  filter(x => x.message && x.message <= 1.2),\n  throttleTime(7000),\n  tap(({connection}) => {\n    connection.send({topic: \"hermes/tts/say\", message: serialize({text: greetings[randint(0,greetings.length)]})})\n  })\n)",
+                      "language": "javascript",
+                      "output": "Uncaught ReferenceError: faceLandmarks is not defined\n"
+                    },
+                    "index": 7,
+                    "lastEditedBy": "c4924e4b-2e55-4f9b-bf11-e67e6d7f2d10",
+                    "_deleted": false
+                  }
+                }
+              }
+            ],
+            "creator": "fvaguydpuy",
+            "time": 1684618784346.05
+          }
+        ],
+        [
+          {
+            "body": [
+              {
+                "ifMatch": {
+                  "$set": {
+                    "data": {
+                      "code": "import {\n  PoseLandmarker,\n  FilesetResolver,\n  DrawingUtils\n} from \"https://cdn.skypack.dev/@mediapipe/tasks-vision@0.10.0\";\n\nconst filesetResolver = await FilesetResolver.forVisionTasks(\n    \"https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.0/wasm\"\n);\n\n/* \n   TODO: I think this function introduce a high overhead, so it should be migrated to WASM C.\n*/\nfunction calculateCentroid(landmarks) {\n    const sum = landmarks.reduce((acc, landmark) => {\n        acc[0] = landmark.x + acc[0];\n        acc[1] = landmark.y + acc[1];\n        acc[2] = landmark.z + acc[2];\n        return acc;\n    }, [0, 0, 0]);\n    return sum.map(coord => coord / landmarks.length);\n}\n\nconst vision = await FilesetResolver.forVisionTasks(\n    \"https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.0/wasm\"\n  );\n\nconst poseLandmarker = await PoseLandmarker.createFromOptions(vision, {\n    baseOptions: {\n      modelAssetPath: `https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task`,\n      delegate: \"GPU\"\n    },\n    runningMode: \"IMAGE\",\n    numPoses: 2\n});\n\n\nconst visionLine = 0.5;\nconst threshold = 0.3;\n\n\nconst greetings = [\n  \"Hola, que puedo hacer por ti hoy?\",\n  \"Buenas tardes\",\n  \"Estimado, como puedo ayudarte?\",\n  \"Hola, por que me miras? Se que soy hermosa, pero no me mires asi\",\n  \"Hola, no me mires asi porque me desgasto\"\n]\n\n\nconnect(\"MQTT\", {\n  ...environment.mqtt,\n  topic: \"eva/camera/image\"\n}).pipe(\n  filter(x => x.message),\n  throttleTime(200),\n  base64ToBlob(),\n  blobToImage,\n  map(({message: img, connection}) => {\n    const landmarks = poseLandmarker.detect(img).landmarks;\n    if (landmarks.length === 0) {\n      connection.send({topic: \"eva/neck/animation\", message:  \"c\"});\n      return {message: null, connection};\n    }\n    const [x,y,z] = calculateCentroid(landmarks[0]);\n    const distance = visionLine-x;\n    const relativeDistance = Math.abs(distance)/x;\n    if (relativeDistance <= threshold)\n      return {message: null, connection};\n    connection.send({topic: \"eva/neck/animation\", message:  distance > 0 ? \"r\" : \"l\"});\n    return {message: math.distance([x,y,z], [0,0,0]), connection};\n  }),\n  filter(x => x.message && x.message <= 1.2),\n  throttleTime(7000),\n  tap(({connection}) => {\n    connection.send({topic: \"hermes/tts/say\", message: serialize({text: greetings[randint(0,greetings.length)]})})\n  })\n)",
+                      "language": "javascript",
+                      "output": ""
+                    },
+                    "index": 7,
+                    "lastEditedBy": "c4924e4b-2e55-4f9b-bf11-e67e6d7f2d10",
+                    "_deleted": false
+                  }
+                }
+              }
+            ],
+            "creator": "fvaguydpuy",
+            "time": 1684618785641.06
+          }
         ]
       ],
-      "hash": "429497fbac4a986f0560b403dc7ae962e05a6b079d7920e6e803d49acaa3e45d"
+      "hash": "d8a0c62c07ca2ef3dfcaeb9f8e581a79a6ea17a5c40c2079ee280fc6d0f0ae26"
     },
     "_meta": {
-      "lwt": 1684618537824.09
+      "lwt": 1684618785642.01
     },
     "_deleted": false,
     "_attachments": {},
-    "_rev": "14-alwuqujhxp"
+    "_rev": "30-maejjbxwtp"
   },
   {
     "id": "IFTDfoOXQb",
