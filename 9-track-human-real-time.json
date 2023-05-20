@@ -1242,7 +1242,7 @@
     "id": "EWrIE6Gc7y",
     "type": "code",
     "data": {
-      "code": "const options = {\n    owner: \"lozanoernesto\",\n    repo: \"evanotebooks\",\n    filePath: \"9-track-human-real-time.json\",\n    commitMessage: \"feat: send action over MQTT\",\n    GITHUB_TOKEN: environment.GITHUB_TOKEN\n}\n\neditor.blocks.get$.pipe(\n  first(),\n  map(content =>\n    btoa(unescape(encodeURIComponent(JSON.stringify(content, null, 2).replaceAll(environment.GITHUB_TOKEN, \"\"))))),\n  commitOnGitHub(options)\n)",
+      "code": "const options = {\n    owner: \"lozanoernesto\",\n    repo: \"evanotebooks\",\n    filePath: \"9-track-human-real-time.json\",\n    commitMessage: \"feat: face estimation to pose estimation\",\n    GITHUB_TOKEN: environment.GITHUB_TOKEN\n}\n\neditor.blocks.get$.pipe(\n  first(),\n  map(content =>\n    btoa(unescape(encodeURIComponent(JSON.stringify(content, null, 2).replaceAll(environment.GITHUB_TOKEN, \"\"))))),\n  commitOnGitHub(options)\n)",
       "language": "javascript",
       "output": ""
     },
@@ -1292,15 +1292,279 @@
             "creator": "fvaguydpuy",
             "time": 1684618537824.02
           }
+        ],
+        [
+          {
+            "body": [
+              {
+                "ifMatch": {
+                  "$set": {
+                    "data": {
+                      "code": "const options = {\n    owner: \"lozanoernesto\",\n    repo: \"evanotebooks\",\n    filePath: \"9-track-human-real-time.json\",\n    commitMessage: \"feat: send action over \",\n    GITHUB_TOKEN: environment.GITHUB_TOKEN\n}\n\neditor.blocks.get$.pipe(\n  first(),\n  map(content =>\n    btoa(unescape(encodeURIComponent(JSON.stringify(content, null, 2).replaceAll(environment.GITHUB_TOKEN, \"\"))))),\n  commitOnGitHub(options)\n)",
+                      "language": "javascript",
+                      "output": ""
+                    },
+                    "index": 9,
+                    "lastEditedBy": "c4924e4b-2e55-4f9b-bf11-e67e6d7f2d10",
+                    "_deleted": false
+                  }
+                }
+              }
+            ],
+            "creator": "fvaguydpuy",
+            "time": 1684618815897.02
+          }
+        ],
+        [
+          {
+            "body": [
+              {
+                "ifMatch": {
+                  "$set": {
+                    "data": {
+                      "code": "const options = {\n    owner: \"lozanoernesto\",\n    repo: \"evanotebooks\",\n    filePath: \"9-track-human-real-time.json\",\n    commitMessage: \"feat: s\",\n    GITHUB_TOKEN: environment.GITHUB_TOKEN\n}\n\neditor.blocks.get$.pipe(\n  first(),\n  map(content =>\n    btoa(unescape(encodeURIComponent(JSON.stringify(content, null, 2).replaceAll(environment.GITHUB_TOKEN, \"\"))))),\n  commitOnGitHub(options)\n)",
+                      "language": "javascript",
+                      "output": ""
+                    },
+                    "index": 9,
+                    "lastEditedBy": "c4924e4b-2e55-4f9b-bf11-e67e6d7f2d10",
+                    "_deleted": false
+                  }
+                }
+              }
+            ],
+            "creator": "fvaguydpuy",
+            "time": 1684618817442.01
+          }
+        ],
+        [
+          {
+            "body": [
+              {
+                "ifMatch": {
+                  "$set": {
+                    "data": {
+                      "code": "const options = {\n    owner: \"lozanoernesto\",\n    repo: \"evanotebooks\",\n    filePath: \"9-track-human-real-time.json\",\n    commitMessage: \"feat: \",\n    GITHUB_TOKEN: environment.GITHUB_TOKEN\n}\n\neditor.blocks.get$.pipe(\n  first(),\n  map(content =>\n    btoa(unescape(encodeURIComponent(JSON.stringify(content, null, 2).replaceAll(environment.GITHUB_TOKEN, \"\"))))),\n  commitOnGitHub(options)\n)",
+                      "language": "javascript",
+                      "output": ""
+                    },
+                    "index": 9,
+                    "lastEditedBy": "c4924e4b-2e55-4f9b-bf11-e67e6d7f2d10",
+                    "_deleted": false
+                  }
+                }
+              }
+            ],
+            "creator": "fvaguydpuy",
+            "time": 1684618820033.06
+          }
+        ],
+        [
+          {
+            "body": [
+              {
+                "ifMatch": {
+                  "$set": {
+                    "data": {
+                      "code": "const options = {\n    owner: \"lozanoernesto\",\n    repo: \"evanotebooks\",\n    filePath: \"9-track-human-real-time.json\",\n    commitMessage: \"feat: anal\",\n    GITHUB_TOKEN: environment.GITHUB_TOKEN\n}\n\neditor.blocks.get$.pipe(\n  first(),\n  map(content =>\n    btoa(unescape(encodeURIComponent(JSON.stringify(content, null, 2).replaceAll(environment.GITHUB_TOKEN, \"\"))))),\n  commitOnGitHub(options)\n)",
+                      "language": "javascript",
+                      "output": ""
+                    },
+                    "index": 9,
+                    "lastEditedBy": "c4924e4b-2e55-4f9b-bf11-e67e6d7f2d10",
+                    "_deleted": false
+                  }
+                }
+              }
+            ],
+            "creator": "fvaguydpuy",
+            "time": 1684618840634.01
+          }
+        ],
+        [
+          {
+            "body": [
+              {
+                "ifMatch": {
+                  "$set": {
+                    "data": {
+                      "code": "const options = {\n    owner: \"lozanoernesto\",\n    repo: \"evanotebooks\",\n    filePath: \"9-track-human-real-time.json\",\n    commitMessage: \"feat: analai\",\n    GITHUB_TOKEN: environment.GITHUB_TOKEN\n}\n\neditor.blocks.get$.pipe(\n  first(),\n  map(content =>\n    btoa(unescape(encodeURIComponent(JSON.stringify(content, null, 2).replaceAll(environment.GITHUB_TOKEN, \"\"))))),\n  commitOnGitHub(options)\n)",
+                      "language": "javascript",
+                      "output": ""
+                    },
+                    "index": 9,
+                    "lastEditedBy": "c4924e4b-2e55-4f9b-bf11-e67e6d7f2d10",
+                    "_deleted": false
+                  }
+                }
+              }
+            ],
+            "creator": "fvaguydpuy",
+            "time": 1684618843741.05
+          }
+        ],
+        [
+          {
+            "body": [
+              {
+                "ifMatch": {
+                  "$set": {
+                    "data": {
+                      "code": "const options = {\n    owner: \"lozanoernesto\",\n    repo: \"evanotebooks\",\n    filePath: \"9-track-human-real-time.json\",\n    commitMessage: \"feat: analyize\",\n    GITHUB_TOKEN: environment.GITHUB_TOKEN\n}\n\neditor.blocks.get$.pipe(\n  first(),\n  map(content =>\n    btoa(unescape(encodeURIComponent(JSON.stringify(content, null, 2).replaceAll(environment.GITHUB_TOKEN, \"\"))))),\n  commitOnGitHub(options)\n)",
+                      "language": "javascript",
+                      "output": ""
+                    },
+                    "index": 9,
+                    "lastEditedBy": "c4924e4b-2e55-4f9b-bf11-e67e6d7f2d10",
+                    "_deleted": false
+                  }
+                }
+              }
+            ],
+            "creator": "fvaguydpuy",
+            "time": 1684618845083.01
+          }
+        ],
+        [
+          {
+            "body": [
+              {
+                "ifMatch": {
+                  "$set": {
+                    "data": {
+                      "code": "const options = {\n    owner: \"lozanoernesto\",\n    repo: \"evanotebooks\",\n    filePath: \"9-track-human-real-time.json\",\n    commitMessage: \"feat: nal\",\n    GITHUB_TOKEN: environment.GITHUB_TOKEN\n}\n\neditor.blocks.get$.pipe(\n  first(),\n  map(content =>\n    btoa(unescape(encodeURIComponent(JSON.stringify(content, null, 2).replaceAll(environment.GITHUB_TOKEN, \"\"))))),\n  commitOnGitHub(options)\n)",
+                      "language": "javascript",
+                      "output": ""
+                    },
+                    "index": 9,
+                    "lastEditedBy": "c4924e4b-2e55-4f9b-bf11-e67e6d7f2d10",
+                    "_deleted": false
+                  }
+                }
+              }
+            ],
+            "creator": "fvaguydpuy",
+            "time": 1684618847683.01
+          }
+        ],
+        [
+          {
+            "body": [
+              {
+                "ifMatch": {
+                  "$set": {
+                    "data": {
+                      "code": "const options = {\n    owner: \"lozanoernesto\",\n    repo: \"evanotebooks\",\n    filePath: \"9-track-human-real-time.json\",\n    commitMessage: \"feat: analyze\",\n    GITHUB_TOKEN: environment.GITHUB_TOKEN\n}\n\neditor.blocks.get$.pipe(\n  first(),\n  map(content =>\n    btoa(unescape(encodeURIComponent(JSON.stringify(content, null, 2).replaceAll(environment.GITHUB_TOKEN, \"\"))))),\n  commitOnGitHub(options)\n)",
+                      "language": "javascript",
+                      "output": ""
+                    },
+                    "index": 9,
+                    "lastEditedBy": "c4924e4b-2e55-4f9b-bf11-e67e6d7f2d10",
+                    "_deleted": false
+                  }
+                }
+              }
+            ],
+            "creator": "fvaguydpuy",
+            "time": 1684618850993.06
+          }
+        ],
+        [
+          {
+            "body": [
+              {
+                "ifMatch": {
+                  "$set": {
+                    "data": {
+                      "code": "const options = {\n    owner: \"lozanoernesto\",\n    repo: \"evanotebooks\",\n    filePath: \"9-track-human-real-time.json\",\n    commitMessage: \"feat: analyze \",\n    GITHUB_TOKEN: environment.GITHUB_TOKEN\n}\n\neditor.blocks.get$.pipe(\n  first(),\n  map(content =>\n    btoa(unescape(encodeURIComponent(JSON.stringify(content, null, 2).replaceAll(environment.GITHUB_TOKEN, \"\"))))),\n  commitOnGitHub(options)\n)",
+                      "language": "javascript",
+                      "output": ""
+                    },
+                    "index": 9,
+                    "lastEditedBy": "c4924e4b-2e55-4f9b-bf11-e67e6d7f2d10",
+                    "_deleted": false
+                  }
+                }
+              }
+            ],
+            "creator": "fvaguydpuy",
+            "time": 1684618852874.01
+          }
+        ],
+        [
+          {
+            "body": [
+              {
+                "ifMatch": {
+                  "$set": {
+                    "data": {
+                      "code": "const options = {\n    owner: \"lozanoernesto\",\n    repo: \"evanotebooks\",\n    filePath: \"9-track-human-real-time.json\",\n    commitMessage: \"feat: \",\n    GITHUB_TOKEN: environment.GITHUB_TOKEN\n}\n\neditor.blocks.get$.pipe(\n  first(),\n  map(content =>\n    btoa(unescape(encodeURIComponent(JSON.stringify(content, null, 2).replaceAll(environment.GITHUB_TOKEN, \"\"))))),\n  commitOnGitHub(options)\n)",
+                      "language": "javascript",
+                      "output": ""
+                    },
+                    "index": 9,
+                    "lastEditedBy": "c4924e4b-2e55-4f9b-bf11-e67e6d7f2d10",
+                    "_deleted": false
+                  }
+                }
+              }
+            ],
+            "creator": "fvaguydpuy",
+            "time": 1684618856641.02
+          }
+        ],
+        [
+          {
+            "body": [
+              {
+                "ifMatch": {
+                  "$set": {
+                    "data": {
+                      "code": "const options = {\n    owner: \"lozanoernesto\",\n    repo: \"evanotebooks\",\n    filePath: \"9-track-human-real-time.json\",\n    commitMessage: \"feat: face estimation to \",\n    GITHUB_TOKEN: environment.GITHUB_TOKEN\n}\n\neditor.blocks.get$.pipe(\n  first(),\n  map(content =>\n    btoa(unescape(encodeURIComponent(JSON.stringify(content, null, 2).replaceAll(environment.GITHUB_TOKEN, \"\"))))),\n  commitOnGitHub(options)\n)",
+                      "language": "javascript",
+                      "output": ""
+                    },
+                    "index": 9,
+                    "lastEditedBy": "c4924e4b-2e55-4f9b-bf11-e67e6d7f2d10",
+                    "_deleted": false
+                  }
+                }
+              }
+            ],
+            "creator": "fvaguydpuy",
+            "time": 1684618861845.01
+          }
+        ],
+        [
+          {
+            "body": [
+              {
+                "ifMatch": {
+                  "$set": {
+                    "data": {
+                      "code": "const options = {\n    owner: \"lozanoernesto\",\n    repo: \"evanotebooks\",\n    filePath: \"9-track-human-real-time.json\",\n    commitMessage: \"feat: face estimation to pose estimation\",\n    GITHUB_TOKEN: environment.GITHUB_TOKEN\n}\n\neditor.blocks.get$.pipe(\n  first(),\n  map(content =>\n    btoa(unescape(encodeURIComponent(JSON.stringify(content, null, 2).replaceAll(environment.GITHUB_TOKEN, \"\"))))),\n  commitOnGitHub(options)\n)",
+                      "language": "javascript",
+                      "output": ""
+                    },
+                    "index": 9,
+                    "lastEditedBy": "c4924e4b-2e55-4f9b-bf11-e67e6d7f2d10",
+                    "_deleted": false
+                  }
+                }
+              }
+            ],
+            "creator": "fvaguydpuy",
+            "time": 1684618865687.02
+          }
         ]
       ],
-      "hash": "e07cb87d1b0425f28cea9900c006b1fed995d1c051d6d6bcbbcec85ad952dd5f"
+      "hash": "429497fbac4a986f0560b403dc7ae962e05a6b079d7920e6e803d49acaa3e45d"
     },
     "_meta": {
-      "lwt": 1684618537824.11
+      "lwt": 1684618865688.01
     },
     "_deleted": false,
     "_attachments": {},
-    "_rev": "2-alwuqujhxp"
+    "_rev": "14-maejjbxwtp"
   }
 ]
