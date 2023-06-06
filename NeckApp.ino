@@ -2,8 +2,9 @@
 #include <ax12.h>
 
 int s = 6;
-int engine1 = 512;
-int engine2 = 512;
+int CENTER = 512;
+int engine1 = CENTER;
+int engine2 = CENTER;
 
 void setup() {
    Serial.begin(9600);
@@ -21,27 +22,27 @@ void loop() {
    if (c == '\0')
       return;
    if (c == 'n' || c == 'N') {
-      nod(3, (c == 'N' ? 50 : 13), (c == 'N' ? 50 : 13));
+      nod(3, (c == 'N' ? 55 : 13), (c == 'N' ? 54 : 13));
    } else if (c == 's' || c == 'S') {
-      shake(3, (c == 'S' ? 50 : 13), (c == 'S' ? 50 : 13));
+      shake(3, (c == 'S' ? 55 : 13), (c == 'S' ? 54 : 13));
    } else if (c == 'c') {
       center();
    } else if (c == 'r' || c == 'R') {
-      engine1 = down_right(1, c == 'R' ? 50 : 13);
+      engine1 = down_right(1, c == 'R' ? 54 : 13);
    } else if (c == 'l' || c == 'L') {
-      engine1 = up_left(1, c == 'L' ? 50 : 13);
+      engine1 = up_left(1, c == 'L' ?  54 : 13);
    } else if (c == 'u' || c == 'U') {
-      engine2 = up_left(2, c == 'U' ? 50 : 13);
+      engine2 = up_left(2, c == 'U' ? 54 : 13);
    } else if (c == 'd' || c == 'D') {
-      engine2 = down_right(2, c == 'D' ? 50 : 13);
+      engine2 = down_right(2, c == 'D' ? 54 : 13);
    } else if (c == 'e' || c == 'E') {
-      ne(c == 'E' ? 50 : 13);
+      ne(c == 'E' ? 54 : 13);
    } else if (c == 'q' || c == 'Q') {
-      nw(c == 'Q' ? 50 : 13);
+      nw(c == 'Q' ? 54 : 13);
    } else if (c == 'x' || c == 'X') {
-      se(c == 'X' ? 50 : 13);
+      se(c == 'X' ? 54 : 13);
    } else if (c == 'z' || c == 'Z') {
-      sw(c == 'Z' ? 50 : 13);
+      sw(c == 'Z' ? 54 : 13);
    } else if (c == 'h') {
       char code[] = {
          'c',
@@ -123,17 +124,17 @@ int down_right(int engine, int top) {
 }
 
 void center() {
-   while (engine1 != 512 || engine2 != 512) {
-      if (engine1 != 512) {
-         if (engine1 > 512) {
+   while (engine1 != CENTER || engine2 != CENTER) {
+      if (engine1 != CENTER) {
+         if (engine1 > CENTER) {
             engine1--;
          } else {
             engine1++;
          }
          SetPosition(1, engine1);
       }
-      if (engine2 != 512) {
-         if (engine2 > 512) {
+      if (engine2 != CENTER) {
+         if (engine2 > CENTER) {
             engine2--;
          } else {
             engine2++;
