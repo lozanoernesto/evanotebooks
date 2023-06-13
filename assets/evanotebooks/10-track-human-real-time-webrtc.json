@@ -1,0 +1,75 @@
+[
+  {
+    "id": "Mo-ytpDxCh",
+    "type": "header",
+    "data": {
+      "text": "Mediapipe",
+      "level": 1
+    },
+    "index": 0
+  },
+  {
+    "id": "tJ5xorxNVX",
+    "type": "code",
+    "data": {
+      "code": "environment.mqtt = {\n    hostname: \"evabroker.sanchezcarlosjr.com\",\n    port: 443,  \n    path: '/', \n    topic: 'notmatters',\n    protocol: \"wss\",\n    username: \"eva_cicese\", \n    password: \"NQz4esJX$\"\n}\nenvironment.wait()",
+      "language": "javascript",
+      "output": "true\n"
+    },
+    "index": 1
+  },
+  {
+    "id": "aDmtl2aWPj",
+    "type": "paragraph",
+    "data": {
+      "text": "Peer 1"
+    },
+    "index": 2
+  },
+  {
+    "id": "kFN7B-Ski0",
+    "type": "code",
+    "data": {
+      "code": "<script type=\"module\">\n  peer.on('call', async function(call) {\n     const stream = await navigator.mediaDevices.getUserMedia({video: true, audio: false});\n     call.answer(stream);\n  });\n</script>",
+      "language": "html",
+      "output": "<script type=\"module\">\n  peer.on('call', async function(call) {\n     const stream = await navigator.mediaDevices.getUserMedia({video: true, audio: false});\n     call.answer(stream);\n  });\n</script>"
+    },
+    "index": 3
+  },
+  {
+    "id": "3rPO8FjxZY",
+    "type": "paragraph",
+    "data": {
+      "text": "Peer 2"
+    },
+    "index": 4
+  },
+  {
+    "id": "bpt_zG9lZd",
+    "type": "code",
+    "data": {
+      "code": "<style>\nvideo {\n  clear: both;\n  display: block;\n  transform: rotateY(180deg);\n  -webkit-transform: rotateY(180deg);\n  -moz-transform: rotateY(180deg);\n}\n.canvas {\n  z-index: 1;\n  position: absolute;\n  pointer-events: none;\n}\n\n.output_canvas {\n  transform: rotateY(180deg);\n  -webkit-transform: rotateY(180deg);\n  -moz-transform: rotateY(180deg);\n}\n\n</style>\n\n<video id=\"peerjs\" style=\"width: 1280px; height: 720px; position: abso\" autoplay playsinline></video>\n<canvas class=\"output_canvas\" id=\"output_canvas\" width=\"1280\" height=\"720\" style=\"position: absolute; left: 0px; top: 0px;\"></canvas>\n<script type=\"module\">\nimport {\n    PoseLandmarker,\n    FilesetResolver,\n    DrawingUtils\n} from \"https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.0\";\n\nfunction calculateCentroid(landmarks) {\n    if (!landmarks) \n      return [0,0,0];\n    let validLandmarksCount = 0;\n    const sum = landmarks.reduce((acc, landmark) => {\n        if (landmark.x < 0 || landmark.x > 1 || landmark.y < 0 || landmark.y > 1)\n            return acc;\n        acc[0] += landmark.x;\n        acc[1] += landmark.y;\n        acc[2] += landmark.z;\n        validLandmarksCount++;\n        return acc;\n    }, [0, 0, 0]);\n    return validLandmarksCount > 0 ? sum.map(coord => coord / validLandmarksCount) : [0,0,0];\n}\n\nconst vision = await FilesetResolver.forVisionTasks(\n    \"https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.0/wasm\"\n);\n\nconst poseLandmarker = await PoseLandmarker.createFromOptions(vision, {\n    baseOptions: {\n        modelAssetPath: `https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task`,\n        delegate: \"GPU\"\n    },\n    runningMode: 'VIDEO',\n    numPoses: 1\n});\n\nconst peerId = \"hhyhpnanki\";\nconst video = document.getElementById(\"peerjs\");\nconst canvasElement = document.getElementById(\"output_canvas\");\nconst canvasCtx = canvasElement.getContext(\"2d\");\nconst drawingUtils = new DrawingUtils(canvasCtx);\nconst videoHeight = \"360px\";\nconst videoWidth = \"480px\";\nlet lastVideoTime = -1;\nasync function predictWebcam() {\n    canvasElement.style.height = videoHeight;\n    video.style.height = videoHeight;\n    canvasElement.style.width = videoWidth;\n    video.style.width = videoWidth;\n    let startTimeMs = performance.now();\n    if (lastVideoTime !== video.currentTime) {\n        lastVideoTime = video.currentTime;\n        poseLandmarker.detectForVideo(video, startTimeMs, (result) => {\n            canvasCtx.save();\n            canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);\n            const isThereSomePose = result.landmarks.length > 0;\n            if (isThereSomePose) {\n               const [x,y,z] = calculateCentroid(result.landmarks[0]);\n               const vcentroid = [x*canvasElement.width,y*canvasElement.height];\n               canvasCtx.beginPath();\n               canvasCtx.arc(vcentroid[0], vcentroid[1], 5, 0, 2*Math.PI, true);\n               canvasCtx.fill();\n            }\n            canvasCtx.restore();\n        });\n    }\n    window.requestAnimationFrame(predictWebcam);\n}\n\nconst stream = await navigator.mediaDevices.getUserMedia({\n    video: true,\n    audio: false\n});\npeer.call(peerId, stream).on('stream', peerStream => video.srcObject = peerStream);\nvideo.addEventListener(\"loadeddata\", predictWebcam);\n</script>",
+      "language": "html",
+      "output": ""
+    },
+    "index": 5
+  },
+  {
+    "id": "3TrsXfmZUX",
+    "type": "paragraph",
+    "data": {
+      "text": "Replication"
+    },
+    "index": 6
+  },
+  {
+    "id": "5TxYsYosBL",
+    "type": "code",
+    "data": {
+      "code": "// Generate new token on https://github.com/settings/tokens\n// It saves your token locally, so you need not generate new token.\nenvironment.GITHUB_TOKEN = environment.GITHUB_TOKEN || \"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\"\nawait environment.wait()\n\neditor.blocks.get$.pipe(\n  first(),\n  map(blocks => blocks.map(document => ({\n          id: document._data.id,\n          type: document._data.type,\n          data: document._data.data,\n          tunes: document._data.tunes,\n          index: document._data.index\n        }))),\n  map(content => \n    btoa(unescape(encodeURIComponent(JSON.stringify(content, null, 2).replaceAll(environment.GITHUB_TOKEN, \"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\"))))\n  ),\n  commitOnGitHub({\n    owner: \"lozanoernesto\",\n    repo: \"evanotebooks\",\n    filePath: \"assets/evanotebooks/10-track-human-real-time-webrtc.json\",\n    commitMessage: \"feat: track human face over WebRTC and using Mediapipe\",\n    GITHUB_TOKEN: environment.GITHUB_TOKEN\n  }\n )\n)",
+      "language": "javascript",
+      "output": "Uncaught Error: Error while fetching the file\n"
+    },
+    "index": 7
+  }
+]
